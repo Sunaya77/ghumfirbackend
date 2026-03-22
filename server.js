@@ -8,6 +8,8 @@ app.use(cors());
 app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
+const packageRoutes = require('./routes/packages');
+app.use('/api/packages', packageRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Travel API is running!' });
