@@ -20,6 +20,24 @@ const createBooking = async (req, res) => {
     });
     package_.availableSeats -= 1;
     await package_.save();
+
+    const populatedBooking = await Booking.findById(booking._id)
+      .populate('user', 'name email')
+      .populate('package', 'title');
+
+    await sendEmail(
+      populatedBooking.user.email,
+      'Booking Received! - Ghumfir Travel',
+      {
+        status: 'pending',
+        userName: populatedBooking.user.name,
+        bookingId: populatedBooking._id,
+        packageTitle: populatedBooking.package.title,
+        totalPrice: populatedBooking.totalPrice,
+        seats: populatedBooking.seats
+      }
+    );
+
     res.status(201).json({ success: true, data: booking });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -63,20 +81,37 @@ const updateBookingStatus = async (req, res) => {
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
+
     if (status === 'approved') {
       await sendEmail(
         booking.user.email,
-        'Booking Confirmed!',
-        `Hi ${booking.user.name}, your booking for ${booking.package.title} has been approved! Total price: Rs. ${booking.totalPrice}`
+        'Booking Confirmed! - Ghumfir Travel',
+        {
+          status: 'approved',
+          userName: booking.user.name,
+          bookingId: booking._id,
+          packageTitle: booking.package.title,
+          totalPrice: booking.totalPrice,
+          seats: booking.seats
+        }
       );
     }
+
     if (status === 'cancelled') {
       await sendEmail(
         booking.user.email,
-        'Booking Cancelled',
-        `Hi ${booking.user.name}, your booking for ${booking.package.title} has been cancelled.`
+        'Booking Cancelled - Ghumfir Travel',
+        {
+          status: 'cancelled',
+          userName: booking.user.name,
+          bookingId: booking._id,
+          packageTitle: booking.package.title,
+          totalPrice: booking.totalPrice,
+          seats: booking.seats
+        }
       );
     }
+
     res.status(200).json({ success: true, data: booking });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
